@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>隨手筆記</title>
+<meta name="description" content="全家人的小怪獸筆記本">
+<meta name="theme-color" content="#F6E3E0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="隨手筆記">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chocolate+Classical+Sans&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <svg class="mascot" id="mascot" viewBox="10 12 180 220" aria-hidden="true"></svg>
+  <h1 class="brand">隨手筆記<small id="sub">全家人的小怪獸筆記本</small></h1>
+  <div class="sync" id="sync" data-s="busy"><i></i><span>連線中</span></div>
+  <button class="me" id="meBtn" hidden aria-label="換人"></button>
+</header>
+
+<main class="wrap">
+  <!-- first time on this phone: family password -->
+  <section class="setup" id="vSetup" hidden>
+    <svg id="setupBear" viewBox="10 12 180 220" aria-hidden="true"></svg>
+    <h2 style="font-family:var(--f-display);font-size:26px;margin:0">歡迎來到隨手筆記</h2>
+    <p style="margin:0;color:var(--muted)">第一次在這支手機打開，請輸入家庭密碼。之後就不用再輸入了。</p>
+    <form class="sticker form" id="keyForm" autocomplete="off">
+      <label>家庭密碼<input id="keyIn" type="password" autocomplete="current-password" required></label>
+      <button class="btn primary" type="submit" id="keyGo">打開筆記本</button>
+      <span id="keyMsg" style="color:var(--danger);font-size:13px" role="status"></span>
+    </form>
+  </section>
+
+  <!-- who is writing -->
+  <section class="login" id="vLogin" hidden>
+    <h2>今天誰要寫筆記？</h2>
+    <p id="loginHint">正在打開筆記本…</p>
+    <div class="tiles" id="tiles"></div>
+    <div class="sticker form" id="pinBox" hidden>
+      <h3 id="pinTitle">輸入 PIN</h3>
+      <form id="pinForm" autocomplete="off">
+        <label>4 位數 PIN<input id="pinIn" class="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required></label>
+      </form>
+      <div class="actions"><button class="btn primary" id="pinGo">進入</button><button class="btn" id="pinCancel">取消</button></div>
+      <span id="pinMsg" style="color:var(--danger);font-size:13px" role="status"></span>
+    </div>
+    <div class="sticker form" id="addBox" hidden>
+      <h3>新增家人</h3>
+      <label>名字<input id="addName" maxlength="12" placeholder="例如 媽媽、Patty"></label>
+      <div class="field"><span class="lbl">選一隻小怪獸當頭像</span><div class="picker" id="picker"></div></div>
+      <label>PIN（選填，4 位數；設了之後換到你要輸入）<input id="addPin" class="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"></label>
+      <div class="actions"><button class="btn primary" id="addGo">加入</button><button class="btn" id="addCancel">取消</button></div>
+      <span id="addMsg" style="color:var(--danger);font-size:13px" role="status"></span>
+    </div>
+    <button class="btn" id="addOpen" style="align-self:center">＋ 新增家人</button>
+  </section>
+
+  <!-- notebook -->
+  <section id="vBook" hidden style="display:flex;flex-direction:column;gap:18px">
+    <div class="sticker compose" aria-label="新增筆記">
+      <textarea id="draft" placeholder="想到什麼就寫下來：會議重點、靈感、要買的東西…&#10;儲存後會自動下標題、加標籤、歸檔。也可以自己打 #標籤"></textarea>
+      <div class="quick">
+        <button data-tpl="meeting">會議記錄模板</button>
+        <button data-tpl="todo">待辦清單</button>
+        <button data-tpl="shop">購物清單</button>
+      </div>
+      <div class="compose-bar">
+        <div class="vis" role="group" aria-label="誰可以看">
+          <button id="visMe" aria-pressed="true">只有我</button><button id="visFam" aria-pressed="false">全家看</button>
+        </div>
+        <span class="spacer"></span>
+        <button class="btn primary" id="saveBtn" disabled>存起來</button>
+      </div>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="檢視">
+      <button role="tab" data-tab="inbox" aria-selected="true">收件匣<span class="n" id="n-inbox"></span></button>
+      <button role="tab" data-tab="cats" aria-selected="false">分類</button>
+      <button role="tab" data-tab="tags" aria-selected="false">標籤</button>
+      <button role="tab" data-tab="archive" aria-selected="false">歸檔<span class="n" id="n-archive"></span></button>
+    </nav>
+    <div class="bar2">
+      <input class="search" id="q" type="search" placeholder="搜尋筆記、標籤、人名" autocomplete="off">
+      <div class="seg" role="group" aria-label="範圍">
+        <button data-scope="all" aria-pressed="true">全部</button><button data-scope="mine" aria-pressed="false">我的</button><button data-scope="family" aria-pressed="false">家人分享</button>
+      </div>
+    </div>
+    <div class="filter" id="filter" hidden></div>
+    <div id="view" class="list"></div>
+
+    <section class="sticker tools" aria-label="資料與同步">
+      <h2>資料放在哪裡</h2>
+      <span>所有筆記自動存在設定者的 Google 雲端硬碟「隨手筆記」資料夾，有變動就更新：</span>
+      <ol>
+        <li><code>隨手筆記資料庫</code>：試算表，可以直接打開看。</li>
+        <li><code>suishou-notes.json</code>：給其他工具讀取的資料檔。</li>
+        <li><code>隨手筆記.md</code>：Markdown 版，可放進任何筆記軟體。</li>
+      </ol>
+      <span>電腦安裝「Google 雲端硬碟」桌面版，這個資料夾就會自動同步到電腦。</span>
+      <span id="folderLink"></span>
+      <div class="row"><button class="btn sm" id="expJson">下載一份 JSON</button><button class="btn sm" id="forget">這支手機登出</button></div>
+    </section>
+  </section>
+</main>
+
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="筆記內容">
+  <div class="sheet-in">
+    <div class="sheet-head">
+      <button class="btn sm" id="back">← 返回</button>
+      <span class="saved" id="savedAt"></span>
+    </div>
+    <div class="sticker paper">
+      <div class="byline" id="byline"></div>
+      <input class="title-in" id="eTitle" placeholder="標題">
+      <textarea class="edit" id="eText"></textarea>
+    </div>
+    <div class="field">
+      <label for="eCat">分類</label>
+      <select id="eCat"></select>
+    </div>
+    <div class="field">
+      <span class="lbl">標籤</span>
+      <div class="tagedit" id="eTags"></div>
+    </div>
+    <div class="sticker summary" id="eSummary" hidden></div>
+    <div class="actions">
+      <button class="btn" id="visBtn">改成全家看</button>
+      <button class="btn" id="reAi">重新整理</button>
+      <button class="btn" id="archBtn">歸檔</button>
+      <button class="btn" id="copyBtn">複製</button>
+      <button class="btn danger" id="delBtn">刪除</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="config.js"></script>
+<script src="monsters.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
